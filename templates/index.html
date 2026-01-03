@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Code Similarity Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .code-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .code-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-section label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .result-container {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .result-container.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .similarity-score {
+            font-size: 4em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 20px 0;
+        }
+
+        .similarity-label {
+            font-size: 1.5em;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .similarity-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .similarity-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 1s ease-out;
+            border-radius: 15px;
+        }
+
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            padding: 15px;
+            background: #ffeaea;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .code-inputs {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            textarea {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐍 Python Code Similarity Checker</h1>
+        <p class="subtitle">Compare two Python code snippets and get their similarity score</p>
+
+        <div class="code-inputs">
+            <div class="code-section">
+                <label for="code1">Code Snippet 1:</label>
+                <textarea id="code1" placeholder="# Enter your first Python code here...
+def example():
+    pass"></textarea>
+            </div>
+            <div class="code-section">
+                <label for="code2">Code Snippet 2:</label>
+                <textarea id="code2" placeholder="# Enter your second Python code here...
+def example():
+    pass"></textarea>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button id="compareBtn" onclick="compareCode()">Compare Codes</button>
+        </div>
+
+        <div class="loading" id="loading">
+            Analyzing code similarity...
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result-container" id="result">
+            <div class="similarity-label">Similarity Score</div>
+            <div class="similarity-score" id="score">0%</div>
+            <div class="similarity-bar">
+                <div class="similarity-fill" id="fillBar" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function compareCode() {
+            const code1 = document.getElementById('code1').value;
+            const code2 = document.getElementById('code2').value;
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error');
+            const loadingDiv = document.getElementById('loading');
+            const compareBtn = document.getElementById('compareBtn');
+
+            // Hide previous results and errors
+            resultDiv.classList.remove('show');
+            errorDiv.classList.remove('show');
+
+            // Validation
+            if (!code1.trim() || !code2.trim()) {
+                errorDiv.textContent = 'Please enter both code snippets!';
+                errorDiv.classList.add('show');
+                return;
+            }
+
+            // Show loading
+            loadingDiv.classList.add('show');
+            compareBtn.disabled = true;
+
+            try {
+                const response = await fetch('/compare', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code1, code2 })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Something went wrong!');
+                }
+
+                // Display results
+                const percentage = data.percentage;
+                document.getElementById('score').textContent = percentage + '%';
+                document.getElementById('fillBar').style.width = percentage + '%';
+                resultDiv.classList.add('show');
+
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.classList.add('show');
+            } finally {
+                loadingDiv.classList.remove('show');
+                compareBtn.disabled = false;
+            }
+        }
+
+        // Allow Ctrl+Enter to submit
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                compareCode();
+            }
+        });
+    </script>
+</body>
+</html>
